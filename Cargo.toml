@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 openssl = "0.10.23"
+clap = "2.33.0"

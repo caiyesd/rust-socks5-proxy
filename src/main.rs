@@ -1,4 +1,6 @@
-use std::io::{Read, Write, Error};
+use clap::{App, Arg};
+use std::io;
+use std::io::{Read, Write};
 use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::str;
 use std::thread;
@@ -48,7 +50,15 @@ fn handle_stream(local_stream: &mut TcpStream) -> Option<TcpStream> {
 
             let tmp = format!("{}:{}", host, port);
             if tmp.to_socket_addrs().is_ok() {
-                addr = tmp.to_socket_addrs().unwrap().as_slice()[0];
+                let tmp = tmp.to_socket_addrs();
+                if tmp.is_ok() {
+                    addr = tmp.unwrap().as_slice()[0];
+                } else {
+                    buffer[0] = 5u8;
+                    buffer[1] = 3u8;
+                    local_stream.write(&buffer[..n]).unwrap_or_default();
+                    return None;
+                }
             } else {
                 buffer[0] = 5u8;
                 buffer[1] = 3u8;
@@ -108,7 +118,7 @@ fn forward_stream(dst: TcpStream, src: TcpStream) {
     }
 }
 
-fn listen_and_serve(addr: &str) -> Result<(), Error> {
+fn listen_and_serve(addr: &str) -> io::Result<()> {
     let listener = TcpListener::bind(addr)?;
 
     loop {
@@ -134,9 +144,26 @@ fn listen_and_serve(addr: &str) -> Result<(), Error> {
 }
 
 fn main() {
-    match listen_and_serve("127.0.0.1:9080") {
+    let matches = App::new("rust-socks5")
+        .version("0.1.0")
+        .author("caiyesd <caiyesd@gmail.com>")
+        .about("A rust implementation of socks5 proxy")
+        .arg(
+            Arg::with_name("local-address")
+                .short("l")
+                .long("local-address")
+                .value_name("ADDR")
+                .help("local listen address")
+                .default_value("127.0.0.1:1080")
+                .takes_value(true),
+        )
+        .get_matches();
+
+    let addr = matches.value_of("local-address").unwrap();
+    println!("starting socks5 proxy on {}", addr);
+    match listen_and_serve(addr) {
         Err(err) => {
-            println!("cannot listen on {}, error: {}", "127.0.0.1:9080", err);
+            println!("cannot listen on {}, error: {}", addr, err);
         }
         _ => {}
     }
