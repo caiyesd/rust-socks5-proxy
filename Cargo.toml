@@ -1,0 +1,8 @@
+[package]
+name = "rust-socks5"
+version = "0.1.0"
+authors = ["caiyesd <caiyesd@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+openssl = "0.10.23"
