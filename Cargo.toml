@@ -7,3 +7,9 @@ edition = "2018"
 [dependencies]
 openssl = "0.10.23"
 clap = "2.33.0"
+
+[profile.release]
+opt-level = 'z'  # Optimize for size.
+lto = true
+codegen-units = 1
+panic = 'abort'
